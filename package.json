@@ -1,0 +1,20 @@
+{
+  "name": "widgetremover",
+  "version": "2.0.0",
+  "description": "CoCo 编辑器 自定义控件移除器",
+  "main": "index.js",
+  "bin": {
+    "widgetremover": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "刘lyxAndy",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "ora": "^6.3.1",
+    "prompts": "^2.4.2"
+  },
+  "type": "module"
+}
