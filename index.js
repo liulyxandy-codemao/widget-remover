@@ -110,7 +110,7 @@ async function main() {
     }
 
     // WidgetRemover 强制要求登录后使用
-    if (!isLogined()) {
+    if (!(await isLogined())) {
         swal("错误", "请在登录后使用 WidgetRemover。", "error")
         return
     }
