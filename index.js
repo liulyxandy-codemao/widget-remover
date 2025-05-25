@@ -3,8 +3,6 @@ import axios from 'axios';
 import swal from 'sweetalert';
 
 let remover_config = JSON.parse(window.localStorage.getItem("remover_config") || '{"fresh_before_remove":true}')
-// 控件class名
-const WIDGET_SECTION_CLASS = "WidgetList_widgetItem__14O1V"
 
 /**
  * 保存配置
