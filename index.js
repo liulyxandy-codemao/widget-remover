@@ -143,7 +143,7 @@ async function main() {
                     break;
 
                 case "about":
-                    swal("关于", "Widget Remover\n版本：V3.0.0\n作者：刘lyxAndy", "info");
+                    swal("关于", "Widget Remover\n版本：V3.0.1\n作者：刘lyxAndy", "info");
                     return;
 
                 case "conf_refresh_before":
