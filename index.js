@@ -34,6 +34,79 @@ async function codemao_update_file(file, uuid) {
 }
 
 /**
+ * 修复商城控件分享问题
+ */
+async function fix_extension() {
+    // 右键控件，打开移除窗口
+    let result = await swal("修复", "是否要修复此作品的商城控件？", "info", {
+        buttons: true
+    })
+    if (!result) return
+    swal("修复中", {
+        content: "progress",
+        buttons: false
+    })
+
+    // 移除前先保存启用
+    if (remover_config.fresh_before_remove) {
+        // 定位保存按钮与保存完成提示
+        let save_button = document.querySelector("#root > div > header > div > div.Header_right__3m7KF > button.coco-button.coco-button-circle.Header_saveBtn__IhQCn")
+        let save_dialog = document.querySelector("#root > div > div.coco-alert.coco-alert-info.CommonToast_wrapper__1vp1G")
+        if (!save_dialog || !save_button) {
+            swal("错误", "编辑器内部错误", "error")
+            return
+        }
+        // 点击保存按钮
+        save_button.click()
+        // 等待保存完成提示出现
+        await waitUntil(() => !save_dialog.classList.contains("hide"))
+    }
+    // ====== 初始化变量 ======
+
+    // 获取作品workId，以便保存
+    let search = new URLSearchParams(location.search)
+    let workid = search.get('workId')
+
+    // WidgetRemover 不支持未保存作品
+    if (workid == null) {
+        swal("错误", "请先保存作品", "error")
+        return
+    }
+    // 获取作品JSON链接
+    let work_data = await axios.get(`https://api-creation.codemao.cn/coconut/web/work/${workid}/content`, { withCredentials: true })
+    // 防跨域、反域名禁止地获取作品JSON数据
+    let url = 'https://coco.codemao.cn/http-widget-proxy/' + (work_data.data.data.bcm_url.includes("creation.codemao.cn") ? work_data.data.data.bcm_url.replace("creation.codemao.cn", "creation.bcmcdn.com") : work_data.data.data.bcm_url)
+    let work_json_data = (await axios.get(url, { withCredentials: true })).data
+    // 修复控件
+    work_json_data.extensionWidgetList.forEach(element => {
+        if (element.cdnUrl.includes("share-haozi")) {
+            swal("错误", "“分享第三方”控件不受支持，请先移除此控件后再进行修复", "error")
+            throw new Error("Unsupported widget found: share-haozi")
+        }
+        element.cdnUrl = element.cdnUrl.replace(".codemao.cn", ".bcmcdn.com")
+    });
+    // 上传作品文件并获取链接与内容
+    let work_pos = await codemao_update_file(work_json_data, Date.now())
+    let wdata = (await axios.get("https://creation.codemao.cn/" + work_pos)).data
+    // 保存作品
+    let data = await axios.put("https://api-creation.codemao.cn/coconut/web/work", {
+        archive_version: "0.1.0",
+        bcm_url: "https://creation.codemao.cn/" + work_pos,
+        id: workid,
+        name: wdata["title"],
+        preview_url: work_json_data.screens[work_json_data.screenIds[0]].snapshot,
+        save_type: 1
+    }, { withCredentials: true })
+    if (data.status == 200) {
+        await swal("成功", "修复成功，请重新分享到H5", "success")
+        window.location.reload();
+    } else {
+        swal("错误", "修复失败", "error")
+    }
+}
+
+
+/**
  * 判断是否登录
  */
 async function isLogined() {
@@ -134,6 +207,7 @@ async function main() {
                     delete: "移除 WidgetRemover",
                     about: "关于 WidgetRemover",
                     conf_refresh_before: `开/关移除控件前保存（当前状态：${remover_config.fresh_before_remove}）`,
+                    action_fix_extension: "修复商城控件分享问题"
                 },
             })
 
@@ -143,13 +217,17 @@ async function main() {
                     break;
 
                 case "about":
-                    swal("关于", "Widget Remover\n版本：V3.0.1\n作者：刘lyxAndy", "info");
+                    swal("关于", "Widget Remover\n版本：V3.1.0\n作者：刘lyxAndy", "info");
                     return;
 
                 case "conf_refresh_before":
                     remover_config.fresh_before_remove = !remover_config.fresh_before_remove
                     saveConfig()
                     swal("设置", `移除控件前保存已${remover_config.fresh_before_remove ? "开启" : "关闭"}`, "success")
+                    return;
+
+                case "action_fix_extension":
+                    fix_extension();
                     return;
 
                 default:
